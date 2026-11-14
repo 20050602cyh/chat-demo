@@ -33,6 +33,15 @@ declare const styles: {
   readonly "importConfirmText": string;
   readonly "deleteConfirm": string;
   readonly "deleteActions": string;
+  readonly "memoryEditor": string;
+  readonly "memoryTextarea": string;
+  readonly "memoryEditorFooter": string;
+  readonly "memoryCount": string;
+  readonly "memoryEmpty": string;
+  readonly "memoryList": string;
+  readonly "memoryItem": string;
+  readonly "memoryText": string;
+  readonly "memoryFooter": string;
 };
 export = styles;
 

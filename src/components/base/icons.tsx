@@ -186,6 +186,17 @@ export const IconLinkOutline14 = () => (
   </svg>
 )
 
+export const IconMemoryOutline16 = () => (
+  <svg width={16} height={16} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M4.6 2.6h6.8a1 1 0 0 1 1 1v9.9l-4.4-3.53-4.4 3.53V3.6a1 1 0 0 1 1-1Z"
+      stroke="currentColor"
+      strokeWidth={1.2}
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
 export const IconMenuOutline20 = () => (
   <svg width={20} height={20} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M17.2027 4.90034V6.43655H2.79724V4.90034H17.2027Z" fill="currentColor" />

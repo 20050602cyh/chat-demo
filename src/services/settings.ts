@@ -1,13 +1,24 @@
 import { create } from 'zustand'
 import type { TtsVoice } from './api/speech.js'
 import { normalizeLocation, type UserLocation } from './location.js'
+import { createId } from '../utils/id.js'
 
 export type Locale = 'zh-CN' | 'en-US'
 
 /** 主题偏好；默认跟随系统 */
 export type ThemePreference = 'light' | 'dark' | 'system'
 
-/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、深度思考与智能搜索开关、侧边栏收起状态 */
+/** 一条长期记忆：文本随每次请求放进系统提示，只保存在本机 */
+export type MemoryEntry = {
+  id: string
+  text: string
+  createdAt: number
+}
+
+/** 记忆条目上限与单条长度上限，避免系统提示无限膨胀 */
+export const MEMORY_LIMITS = { entries: 100, chars: 600 } as const
+
+/** 本机设置，存 localStorage：API Key、语言、主题、位置、朗读音色、深度思考与智能搜索开关、侧边栏收起状态、记忆 */
 type Settings = {
   apiKey: string | null
   locale: Locale
@@ -17,6 +28,8 @@ type Settings = {
   thinking: boolean
   search: boolean
   siderCollapsed: boolean
+  memoryEnabled: boolean
+  memories: MemoryEntry[]
 }
 
 const KEYS = {
@@ -28,6 +41,8 @@ const KEYS = {
   thinking: 'chat-demo:thinking',
   search: 'chat-demo:search',
   siderCollapsed: 'chat-demo:sider-collapsed',
+  memoryEnabled: 'chat-demo:memory-enabled',
+  memories: 'chat-demo:memories',
 } as const
 
 const read = (key: string) => {
@@ -87,6 +102,72 @@ const initialThemePreference = (): ThemePreference => {
 /** 未保存过时使用服务端默认音色 stella（海星） */
 const initialTtsVoice = (): TtsVoice => (read(KEYS.ttsVoice) === 'tide' ? 'tide' : 'stella')
 
+/** 读取记忆：脏数据整条丢弃，超长文本截断，条数按上限裁剪 */
+const initialMemories = (): MemoryEntry[] => {
+  try {
+    const raw: unknown = JSON.parse(read(KEYS.memories) ?? '[]')
+    if (!Array.isArray(raw)) {
+      return []
+    }
+    return raw
+      .flatMap((item): MemoryEntry[] => {
+        if (typeof item !== 'object' || item === null) {
+          return []
+        }
+        const { id, text, createdAt } = item as Partial<MemoryEntry>
+        if (typeof text !== 'string' || !text.trim()) {
+          return []
+        }
+        return [
+          {
+            id: typeof id === 'string' && id ? id : createId(),
+            text: text.slice(0, MEMORY_LIMITS.chars),
+            createdAt: typeof createdAt === 'number' ? createdAt : Date.now(),
+          },
+        ]
+      })
+      .slice(0, MEMORY_LIMITS.entries)
+  } catch {
+    return []
+  }
+}
+
+/** 保存后同步到 store，界面立即刷新 */
+const saveMemories = (memories: MemoryEntry[]) => {
+  write(KEYS.memories, JSON.stringify(memories))
+  useSettings.setState({ memories })
+}
+
+export type AddMemoryResult = 'added' | 'duplicate' | 'full'
+
+/** 添加一条记忆；相同文本不重复记录，超过条数上限时返回 full */
+export const addMemory = (text: string): AddMemoryResult => {
+  const trimmed = text.trim().slice(0, MEMORY_LIMITS.chars)
+  if (!trimmed) {
+    return 'duplicate'
+  }
+  const { memories } = useSettings.getState()
+  if (memories.some((item) => item.text === trimmed)) {
+    return 'duplicate'
+  }
+  if (memories.length >= MEMORY_LIMITS.entries) {
+    return 'full'
+  }
+  saveMemories([{ id: createId(), text: trimmed, createdAt: Date.now() }, ...memories])
+  return 'added'
+}
+
+export const removeMemory = (id: string) => {
+  saveMemories(useSettings.getState().memories.filter((item) => item.id !== id))
+}
+
+export const clearMemories = () => saveMemories([])
+
+export const setMemoryEnabled = (memoryEnabled: boolean) => {
+  write(KEYS.memoryEnabled, String(memoryEnabled))
+  useSettings.setState({ memoryEnabled })
+}
+
 export const useSettings = create<Settings>(() => ({
   apiKey: read(KEYS.apiKey),
   locale: initialLocale(),
@@ -96,6 +177,8 @@ export const useSettings = create<Settings>(() => ({
   thinking: read(KEYS.thinking) === 'true',
   search: read(KEYS.search) === 'true',
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
+  memoryEnabled: read(KEYS.memoryEnabled) !== 'false',
+  memories: initialMemories(),
 }))
 
 export const setLocale = (locale: Locale) => {

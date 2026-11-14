@@ -440,3 +440,96 @@
     max-width: 100%;
   }
 }
+
+.memoryEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+
+.memoryTextarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 72px;
+  max-height: 168px;
+  padding: 10px 12px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 12px;
+  background-color: transparent;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  resize: vertical;
+  outline: none;
+
+  &::placeholder {
+    color: var(--dsw-alias-label-tertiary);
+  }
+
+  &:focus {
+    border-color: var(--dsw-alias-button-primary-fill);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.memoryEditorFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.memoryCount {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.memoryEmpty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 0;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.memoryList {
+  display: flex;
+  flex-direction: column;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memoryItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 0;
+
+  & + & {
+    box-shadow: inset 0 1px 0 0 var(--dsw-alias-border-l2-darkmode-thin);
+  }
+}
+
+.memoryText {
+  flex: 1 0 0;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 22px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.memoryFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 0 4px;
+}

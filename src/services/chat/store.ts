@@ -36,6 +36,19 @@ import {
 const MODEL: ChatModel = 'deepseek-flash'
 /** 所有生成请求统一携带的助手身份说明 */
 const SYSTEM_PROMPT = '该助手为DeepSeek，由深度求索公司创造。'
+
+/**
+ * 把本机保存的长期记忆拼进系统提示。
+ * 停用或没有条目时返回空串，保证请求体与原来完全一致。
+ */
+const memoryPrompt = (): string => {
+  const { memoryEnabled, memories } = useSettings.getState()
+  if (!memoryEnabled || memories.length === 0) {
+    return ''
+  }
+  const lines = memories.map((item) => `- ${item.text}`).join('\n')
+  return `\n\n以下是用户保存在本机的长期记忆。回答时自然地运用这些信息，不要主动罗列、复述或提及「记忆条目」；与当前问题无关时忽略：\n${lines}`
+}
 /** 保留最近打开的详情；当前会话、生成中及尚未成功保存的会话不淘汰。 */
 const SESSION_CACHE_LIMIT = 5
 /** 安全审核固定开启，所有请求都走扩展模式 */
@@ -1000,7 +1013,7 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
           useSettings.getState().apiKey ?? '',
           {
             model: initial.model ?? MODEL,
-            system: SYSTEM_PROMPT,
+            system: SYSTEM_PROMPT + memoryPrompt(),
             messages,
             thinking: { type: initial.thinking ? 'enabled' : 'disabled' },
             safety_check: SAFETY_CHECK,
