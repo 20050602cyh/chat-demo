@@ -1,8 +1,10 @@
-/** ZIP 条目名。条目顺序固定：manifest → user（可能缺失）→ 全部会话 JSON → index → 全部图片。 */
+/** ZIP 条目名。条目顺序固定：manifest → user（可能缺失）→ 全部会话 JSON → index → memories（可能缺失）→ 全部图片。 */
 
 export const MANIFEST_PATH = 'manifest.json'
 export const USER_PATH = 'user.json'
 export const INDEX_PATH = 'chat_session_index.json'
+/** 长期记忆条目，位于 index 之后、图片之前；旧归档没有这个条目 */
+export const MEMORY_PATH = 'memories.json'
 
 export const sessionPath = (sessionId: string) => `chat_sessions/${sessionId}.json`
 

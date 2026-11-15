@@ -24,6 +24,14 @@ export type SessionIndexEntry = {
   updated_at: Iso8601Utc
 }
 
+/**
+ * memories.json，位于 chat_session_index.json 之后、图片之前。
+ * 旧版归档没有这个条目，导入时按「没有记忆」处理。
+ */
+export type MemoryFile = {
+  memories: { text: string; inserted_at: Iso8601Utc }[]
+}
+
 /** chat_sessions/{session_id}.json */
 export type SessionFile = {
   id: string

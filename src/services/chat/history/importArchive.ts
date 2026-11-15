@@ -1,7 +1,14 @@
 import * as db from '../db.js'
 import { BackupError, fail } from './errors.js'
-import type { SessionIndexEntry } from './format.js'
-import { INDEX_PATH, MANIFEST_PATH, USER_PATH, parseSessionPath, sessionFilesDir } from './paths.js'
+import type { MemoryFile, SessionIndexEntry } from './format.js'
+import {
+  INDEX_PATH,
+  MANIFEST_PATH,
+  MEMORY_PATH,
+  USER_PATH,
+  parseSessionPath,
+  sessionFilesDir,
+} from './paths.js'
 import { checkManifest, readSessionFile, readSessionIndex } from './schema.js'
 import { toLocalSession } from './toLocal.js'
 import {
@@ -41,6 +48,19 @@ const imageType = (bytes: Uint8Array): string => {
   return ''
 }
 
+/** 记忆文件只取文本；结构不对视为归档不完整。 */
+const readMemoryFile = (value: unknown): string[] => {
+  const { memories } = (value ?? {}) as Partial<MemoryFile>
+  if (!Array.isArray(memories)) {
+    fail('backupIncomplete')
+    return []
+  }
+  return memories.flatMap((item: unknown) => {
+    const { text } = (item ?? {}) as { text?: unknown }
+    return typeof text === 'string' && text.trim() ? [text] : []
+  })
+}
+
 const readJson = async (entry: ArchiveEntry): Promise<unknown> => {
   const text = await (await readEntry(entry)).text()
   try {
@@ -73,12 +93,12 @@ export const checkArchiveFormat = async (file: File): Promise<void> => {
 }
 
 /**
- * 流式导入：manifest → user（不导入）→ 全部会话 JSON → index → 全部图片。
+ * 流式导入：manifest → user（不导入）→ 全部会话 JSON → index → memories → 全部图片。
  * 也支持会话与图片交错排列、index 位于末尾的条目顺序。
  * 会话读完立即暂存，只保留图片路径映射；图片全部读完后逐会话回填 MIME，不改变图片身份。
  * 写入导入暂存存储；调用方负责先清空暂存，成功后替换正式数据，失败时清理暂存。
  */
-export const importArchive = async (file: File): Promise<void> => {
+export const importArchive = async (file: File): Promise<string[] | undefined> => {
   if (!(await isZipFile(file))) {
     fail('backupUnrecognized')
   }
@@ -88,6 +108,7 @@ export const importArchive = async (file: File): Promise<void> => {
   const stored = new Map<string, string>()
   let manifest = false
   let index: SessionIndexEntry[] | undefined
+  let memories: string[] | undefined
   let currentSessionId: string | undefined
 
   const saveImage = async (entry: ArchiveEntry, id: string) => {
@@ -127,6 +148,8 @@ export const importArchive = async (file: File): Promise<void> => {
         await db.addStagingSession(local.session)
       } else if (path === INDEX_PATH && !index) {
         index = readSessionIndex(await readJson(entry))
+      } else if (path === MEMORY_PATH && !memories) {
+        memories = readMemoryFile(await readJson(entry))
       } else if (
         index
           ? imported.has(/^chat_sessions\/([^/]+)_files\//.exec(path)?.[1] ?? '')
@@ -156,4 +179,5 @@ export const importArchive = async (file: File): Promise<void> => {
     fail('backupIncomplete')
   }
   await db.updateStagingFileTypes(stored)
+  return memories
 }

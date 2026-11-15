@@ -60,3 +60,24 @@
     height: var(--app-viewport-height, 100dvh);
   }
 }
+
+.background {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.backgroundImage {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.backgroundDim {
+  position: absolute;
+  inset: 0;
+  background-color: var(--dsw-alias-bg-base);
+}

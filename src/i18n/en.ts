@@ -196,4 +196,14 @@ export const en = {
   memorySaved: 'Saved to memory',
   memoryAlreadySaved: 'Already in memory',
   memoryFull: 'Memory is full (100 notes); delete a few first',
+  settingsChatBackground: 'Chat background',
+  settingsChatBackgroundDescription:
+    'Pick an image from this device. It is stored in this browser only; the slider dims it so text stays readable.',
+  chatBackgroundChoose: 'Choose image',
+  chatBackgroundReplace: 'Change image',
+  chatBackgroundReset: 'Default background restored',
+  chatBackgroundResetAction: 'Reset',
+  chatBackgroundDim: 'Dimming {value}%',
+  chatBackgroundApplied: 'Background updated',
+  chatBackgroundFailed: 'Could not process that image; try another',
 } satisfies Record<keyof typeof zh, string>

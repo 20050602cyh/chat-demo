@@ -42,6 +42,11 @@ declare const styles: {
   readonly "memoryItem": string;
   readonly "memoryText": string;
   readonly "memoryFooter": string;
+  readonly "backgroundActions": string;
+  readonly "backgroundPreview": string;
+  readonly "backgroundThumb": string;
+  readonly "backgroundSlider": string;
+  readonly "backgroundSliderLabel": string;
 };
 export = styles;
 

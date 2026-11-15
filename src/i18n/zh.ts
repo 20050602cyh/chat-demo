@@ -187,4 +187,14 @@ export const zh = {
   memorySaved: '已记住',
   memoryAlreadySaved: '这条已经在记忆里了',
   memoryFull: '记忆已满（100 条），请先删掉几条',
+  settingsChatBackground: '聊天背景',
+  settingsChatBackgroundDescription:
+    '从本机选一张图做背景，图片只存在这个浏览器里；下面的滑块可以压暗背景，保证文字看得清。',
+  chatBackgroundChoose: '选择图片',
+  chatBackgroundReplace: '更换图片',
+  chatBackgroundReset: '已恢复默认背景',
+  chatBackgroundResetAction: '恢复默认',
+  chatBackgroundDim: '背景遮罩 {value}%',
+  chatBackgroundApplied: '背景已更新',
+  chatBackgroundFailed: '这张图处理不了，换一张试试',
 } as const

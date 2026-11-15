@@ -15,6 +15,9 @@ export type MemoryEntry = {
   createdAt: number
 }
 
+/** 自定义聊天背景：图片以 data URL 存本机，dim 为底色遮罩不透明度（0–0.8） */
+export type ChatBackground = { dataUrl: string; dim: number }
+
 /** 记忆条目上限与单条长度上限，避免系统提示无限膨胀 */
 export const MEMORY_LIMITS = { entries: 100, chars: 600 } as const
 
@@ -30,6 +33,7 @@ type Settings = {
   siderCollapsed: boolean
   memoryEnabled: boolean
   memories: MemoryEntry[]
+  chatBackground: ChatBackground | null
 }
 
 const KEYS = {
@@ -43,6 +47,7 @@ const KEYS = {
   siderCollapsed: 'chat-demo:sider-collapsed',
   memoryEnabled: 'chat-demo:memory-enabled',
   memories: 'chat-demo:memories',
+  chatBackground: 'chat-demo:chat-background',
 } as const
 
 const read = (key: string) => {
@@ -132,6 +137,24 @@ const initialMemories = (): MemoryEntry[] => {
   }
 }
 
+/** 读取背景：只接受 data:image 开头的图片，遮罩浓度裁剪到 0–0.8 */
+const initialChatBackground = (): ChatBackground | null => {
+  try {
+    const raw: unknown = JSON.parse(read(KEYS.chatBackground) ?? 'null')
+    if (typeof raw !== 'object' || raw === null) {
+      return null
+    }
+    const { dataUrl, dim } = raw as Partial<ChatBackground>
+    if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) {
+      return null
+    }
+    const opacity = typeof dim === 'number' && Number.isFinite(dim) ? dim : 0.2
+    return { dataUrl, dim: Math.min(0.8, Math.max(0, opacity)) }
+  } catch {
+    return null
+  }
+}
+
 /** 保存后同步到 store，界面立即刷新 */
 const saveMemories = (memories: MemoryEntry[]) => {
   write(KEYS.memories, JSON.stringify(memories))
@@ -163,6 +186,26 @@ export const removeMemory = (id: string) => {
 
 export const clearMemories = () => saveMemories([])
 
+/** 导入历史时用具名文本覆盖记忆，重新生成 id，去重并截断 */
+export const replaceMemories = (texts: string[]) => {
+  const seen = new Set<string>()
+  const memories: MemoryEntry[] = []
+  for (const text of texts) {
+    const trimmed = text.trim().slice(0, MEMORY_LIMITS.chars)
+    if (!trimmed || seen.has(trimmed) || memories.length >= MEMORY_LIMITS.entries) {
+      continue
+    }
+    seen.add(trimmed)
+    memories.push({ id: createId(), text: trimmed, createdAt: Date.now() })
+  }
+  saveMemories(memories)
+}
+
+export const setChatBackground = (chatBackground: ChatBackground | null) => {
+  write(KEYS.chatBackground, chatBackground ? JSON.stringify(chatBackground) : null)
+  useSettings.setState({ chatBackground })
+}
+
 export const setMemoryEnabled = (memoryEnabled: boolean) => {
   write(KEYS.memoryEnabled, String(memoryEnabled))
   useSettings.setState({ memoryEnabled })
@@ -179,6 +222,7 @@ export const useSettings = create<Settings>(() => ({
   siderCollapsed: read(KEYS.siderCollapsed) === 'true',
   memoryEnabled: read(KEYS.memoryEnabled) !== 'false',
   memories: initialMemories(),
+  chatBackground: initialChatBackground(),
 }))
 
 export const setLocale = (locale: Locale) => {

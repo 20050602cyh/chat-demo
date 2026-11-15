@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useTranslate } from '../i18n/index.js'
-import { useSettings } from '../services/settings.js'
+import { useSettings, type ChatBackground } from '../services/settings.js'
 import { useIsMobile, useMobileViewport, usePreventPageScroll } from './viewport.js'
 import {
   bindChatPersistence,
@@ -32,6 +32,7 @@ export const App = () => {
   const locale = useSettings((state) => state.locale)
   // 移动端侧边栏以独立抽屉管理开合状态
   const siderCollapsed = useSettings((state) => state.siderCollapsed) && !isMobile
+  const chatBackground = useSettings((state) => state.chatBackground)
   const ready = useChatStore((state) => state.ready)
   const initError = useChatStore((state) => state.initError)
   const saveError = useChatStore((state) => Object.values(state.sessionSaveErrors).some(Boolean))
@@ -67,6 +68,19 @@ export const App = () => {
   // 移动端选中会话、切换布局后收起抽屉
   useEffect(closeMobileSider, [activeId, isMobile])
 
+  // 有自定义背景时会话区改为透明，让背景图透出来
+  useEffect(() => {
+    const root = document.documentElement
+    if (chatBackground) {
+      root.style.setProperty('--ds-chat-surface', 'transparent')
+    } else {
+      root.style.removeProperty('--ds-chat-surface')
+    }
+    return () => {
+      root.style.removeProperty('--ds-chat-surface')
+    }
+  }, [chatBackground])
+
   useEffect(() => {
     void initChat()
     // 首次打开先在设置里输入 API Key
@@ -76,6 +90,7 @@ export const App = () => {
   return (
     <>
       <div ref={frameRef} className={styles.frame}>
+        {chatBackground ? <BackgroundLayer background={chatBackground} /> : null}
         {isMobile ? <MobileSider /> : siderCollapsed ? null : <Sider />}
         <main className={styles.main}>
           {saveError ? (
@@ -137,3 +152,14 @@ export const App = () => {
     </>
   )
 }
+
+/** 聊天背景：铺满整屏的图片 + 一层跟随主题的底色遮罩 */
+const BackgroundLayer = ({ background }: { background: ChatBackground }) => (
+  <div className={styles.background} aria-hidden>
+    <div
+      className={styles.backgroundImage}
+      style={{ backgroundImage: `url(${background.dataUrl})` }}
+    />
+    <div className={styles.backgroundDim} style={{ opacity: background.dim }} />
+  </div>
+)
